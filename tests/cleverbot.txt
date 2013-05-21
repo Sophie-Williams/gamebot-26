@@ -1,0 +1,70 @@
+(do
+    (define lastBuy 0)
+    (define lastSell 0)
+    (define Buy 0)
+    (define Sell 0)
+
+    (define prod_price 2000)
+    (define (min x y)
+        (if (< x y)
+            x
+            y
+    ))
+    (define (to_prod)
+        (min
+            (?raw(?my_id))
+            ( * 
+                2
+                (/  (?money(?my_id)) 3 prod_price  )
+            )
+    ))
+    (define (to_buy)
+        (min
+            (/ (?money(?my_id)) (?production_price) 2)
+            (?demand)
+        ))
+
+    (define (maketurn cnt failedSell failedBuy)
+        (do
+            (print "cnt = " cnt)
+            (print (if failedSell "Bad Sell" "Good Sell"))
+            (print (if failedBuy  "Bad Buy"  "Good Buy" ))
+
+            (print "My money = " (?money (?my_id)))
+
+            (:= lastSell Sell)
+            (:= lastBuy Buy)
+
+            (prod (to_prod))
+            (print "prod " (to_prod))
+
+            (:= Sell
+                (min
+                    (?production(?my_id))
+                    (?supply)
+            ))
+            (sell Sell 
+                (- (?raw_price) (if failedBuy 200 0) ))
+            (print "sell " Sell " " (?raw_price) )
+    
+            (:= Buy (to_buy))               
+            (buy Buy
+                (+ (?production_price) (if failedBuy 200 0) ))
+            (print "buy " Buy " " (?production_price))
+            
+            (endturn)
+            (print "End of turn#" (?turn))
+            (print)
+
+            (wait)
+            (print "sold= "   (?result_prod_sold(?my_id))   "   lastSell= " lastSell)
+            (print "bought= " (?result_raw_bought(?my_id))  "   lastBuy= "  lastBuy )  
+
+            (maketurn
+                (+ cnt 1)
+                (> lastSell (?result_prod_sold(?my_id)))
+                (> lastBuy  (?result_raw_bought(?my_id)))
+           )
+        ))
+    (maketurn 0 #false #false)
+)

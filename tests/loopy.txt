@@ -1,0 +1,8 @@
+(do
+    (define (loopy cnt)
+        (do
+            (print "cnt= "  cnt)
+            (loopy (+ cnt 1))
+        ))
+    (loopy 0)
+)

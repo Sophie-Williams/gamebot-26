@@ -1,0 +1,115 @@
+// Scheme-specefied
+		"lambda", "define",	"if", "cond", "do", "eval", "let",
+		"list", "quote", "car", "cdr", "add",
+// Arithmetic & Logic
+		"+", "-", "*", "/", "%",
+		"!=", "<", "<=", "=", ">=", ">",
+		"#true", "#false",
+		"and", "or", "not",
+// network operators
+		"buy", "sell", "prod", "build", "endturn",
+		"print",
+// network operations
+		"?my_id", "?turn", "?players", "?active_players",
+		"?supply", "?raw_price", "?demand",	"?production_price",
+		"?money", "?raw", "?production", "?factories", "?active_factories",
+// newtork auction results
+		"?result_raw_bought", "?result_raw_price",
+		"?result_prod_sold", "?result_prod_price"
+
+
+Format: call(t/f), exec(t/f), evaluate arguments(t/f), valence (N or V=vardic)
+
+Lambda: TFF2 (1st arg is SchList)
+	(lambda (x y ... z) obj) ::-> SchFunction
+		SchFunction->map = (x y ... z)
+		SchFunction->body = obj
+	obj can use (x y ... z) namespace
+	x y ... z are NAMES
+		
+Define: FTF2 (1st arg is SchName)
+	(define _name obj)
+		make _name an alias of obj in global namespace.
+		
+Cond: TFFV	(Args are 2-element SchList_s)
+	(cond
+		(c1 x1)
+		(c2 x2)
+		...
+		(cN xN) )
+	Choose the first true cK statement and return xK.
+
+If: TFF3
+	(if statement then else)
+	1) evaluate statement and compare it to #false
+	2) if == #false --> return "else" evaluated
+	3) in another case return "then" evaluated
+	
+Do: FTFV
+	(do x1 x2 .. xN)
+	execute x1, x2, ..., xN consequently
+	
+Eval: TFT1
+	(eval arg)
+	execute  --> print arg.eval
+	
+Let: TTF2
+	(let defines todo)
+		defines ::= (
+			(x1 ev1)
+			...
+			(xN evN)
+		)
+
+-------------------
+	
+List: TFTV
+	(list x1 x2 ... xN)
+		return SchList<( x1.eval() x2.eval() ... xN.eval() )>
+		
+Quote: TFFV
+	(quote x1 x2 ... xN)
+		return SchList<( x1 x2 ... xN )>
+	
+Car: TFF1
+	(car list)
+		return list->arg0 // raw, not evaluated
+
+Cdr: TFF1
+	(cdr list)
+		return SchList< list->next >
+
+-------------------
+
++ - * / : TFTV (args are SchInteger or SchFloat)
+	(_ x1 x2 ... xN)
+		return the SchConstant result of the respective operation
+
+% : TFT2 (args are SchInteger)
+	(% a b)
+		return (a mod b)
+
+-------------------
+
+< <= = >= > : TFT2 (args are SchInteger or SchFloat)
+	(_ x y)
+
+#true, #false -- analogs of SchInteger(1) and SchInteger(0)
+
+and, or: TFFV (args are SchInteger). It's should be lazy
+	(_ x1 ... xN) ::-> SchInteger(0 or 1) (#true or #false)
+	
+not: TFT1 (SchInteger)
+	(not x) ::->SchInteger (#true of #false)
+	
+-------------------
+
+buy, sell : FTT2 (SchInteger)
+prod, build : FTT1 (SchInteger)
+endturn : FTT0 / FTF0
+
+-------------------
+
+print : FTTV
+	(print x1 ... xN)
+		xK->print() consequently for k=1..N

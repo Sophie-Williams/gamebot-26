@@ -1,0 +1,28 @@
+<Program> ::= <Obj>
+
+<Obj>	::= <Atom> | <List>
+<List>	::= '(' <Internal> ')'
+<Internal> ::= { <Obj> }
+<Atom>	::= <Integer> | <Float> | <String> | <Name> | <Special>
+
+
+FIRST(<Atom>) = <Integer>, <Float>, <String>, <Name>, <Special>
+
+FIRST(<Internal>) = <Integer>, <Float>, <String>, <Name>, <Special>, '(', eps	
+FOLLOW(<Internal>) = ')'
+
+FIRST(<List>) = '('
+
+FIRST(<Obj>) = <Integer>, <Float>, <String>, <Name>, <Special>, '('
+
+
+.test:
+FIRST(A) and FIRST(b):
+	<Atom>:: FIRST(<Integer>) and FIRST(<Float>) and FIRST(<String>) and FIRST(<Name>) 
+		and FIRST(<Special>) = \nothing	ok!
+	<List>:: no alternatives	ok!
+	<Obj>:: FIRST(<Atom>) and FIRST (<List>) = \nothing	ok!
+	<Internal>:: FIRST(<Internal'>) and {eps} = \nothing ok!
+	<Internal'>:: no alternalives	ok!
+
+<Internal>:: FIRST(<Internal'>) and FOLLOW(')') = \nothing ok!

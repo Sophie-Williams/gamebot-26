@@ -1,0 +1,35 @@
+(do
+    (define prod_price 2000)
+    (define (min x y)
+        (if (< x y)
+            x
+            y
+    ))
+    (define (to_prod)
+        (min
+            (?raw(?my_id))
+            ( * 
+                2
+                (/  (?money(?my_id)) 3 prod_price  )
+            )
+    ))
+    (define (to_buy)
+        (/ (?money(?my_id)) (?production_price) 2))
+
+    (define maketurn
+        (do
+
+            (print "My money = " (?money (?my_id)))
+
+            (prod (to_prod))
+            (print "prod " (to_prod))
+            (sell (?production(?my_id)) (?raw_price))
+            (print "sell " (?production(?my_id)) " " (?raw_price) )
+            (buy (to_buy) (?production_price))
+            (print "buy " (to_buy) " " (?production_price))
+            (endturn)
+            (print "End of turn#" (?turn))
+            maketurn
+        ))
+    maketurn
+)

@@ -1,0 +1,6 @@
+(do
+    (define (F x y) (+ x y))
+    (print (F 1 2))
+    (:= F 17)
+    (print F)
+)

@@ -1,0 +1,57 @@
+Keywords:
+	:=
+	goto
+	if
+	buy sell prod build endturn
+	print
+	def
+	{ }
+Usage:
+	var $k,
+		$array[24];
+
+Syntax:
+	<program> ::= <definition> ';' <code> | <code>
+	
+	<definition> ::= 'def' <variable_> {, <variable_> }
+		<variable_> ::= <variable> | <variable> | <array>	// meta-symbol
+		<array> ::= <variable_> '[' <expression> ']'
+		
+	<code> ::= <operator> ';' <code> | \eps
+		
+	<operator> ::=
+		<complex-operator> | <assign-operator> | <if-operator> | <goto-operator> |
+		<game-operator> | <print-operator> | <labeled-operator>
+		
+		<complex-operator> ::= '{' <code> '}'
+		<assign-operator> ::= <variable_> ':=' <expression>
+		<if-operator> ::= 'if' <expession> 'then' <operator> 'else' <operator>
+		<goto-operator> ::= 'goto' <label>
+		<labeled-operator> ::= <label>':' <operator>
+		<game-operator> ::= <game0> | <game1> <expression> | <game2> <expression> <expression>
+			<game0> ::= 'endturn'
+			<game1> ::= 'prod' | 'build'
+			<game2> ::= 'buy' | 'sell'
+		<print-operator> ::= 'print' <p_list>	
+			<p_list> ::= <p_node> | <p_node> ',' <p_list>
+			<p_node> ::= <expression> | <string>
+			
+	<expression> ::=
+		<comparator> |
+		<comparator> '|' <expression> | <comparator> '&' <expression> | '!' <expression>
+	<comparator> ::=
+		<summand> | <summand> '<' <summand> | <summand> '>' <summand> | <summand> '=' <summand>
+	<summand> ::=
+		<multiplier> | <multiplier> '+' <summand> | <multiplier> '-' <summand>
+	<multiplier> ::=
+		<term> | <term> '*' <multiplier> | <term> '/' <multiplier> | <term> '%' <multiplier>
+	<term> ::= <variable_> | <func-call> | <numeric> | '(' <expression> ')'
+		<func-call> ::= <function> '(' <func-args> ')		// Check function valency
+		<func-args> ::= <expression> ',' <func_args> | \eps
+	
+	
+Meta:
+	<variable>	// lexem haz type 'VARIABLE' and it haz been defined
+	<function>	// lexem haz type 'FUNCTION' and it haz been defined
+	<numberic>	// lexem haz type 'NUMERIC'
+	<string>	// lexem haz type 'STRING'

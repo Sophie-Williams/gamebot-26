@@ -1,0 +1,223 @@
+SchemeObject can be:
+	1) evaluated
+	2) executed
+	3) called with N arguments
+	
+There are several types of SchemeObjects:
+	1) Constants (Integers, Floats, Strings)
+	2) Lists
+	3) Names
+	4) Special objects
+	5) Functions // TODO:
+
+SchemeMachine has two stacks:
+	1) Task stack
+	2) Result stack
+
+How does it works? First we have to add the first task to SM, then launch it.
+While the task stack isn't empty, the top task is perfomed. Tasks can't be recursive,
+but they can do:
+	1) add new tasks to the top of task stack
+	2) perform some action and add result to result stack
+	3) --- nothing ---
+	
+Result stack consist of SchemeObjects.
+Each task consist of two fields:
+	1) SchemeObject which would be applied to perform the task
+	2) Action:
+		a) Evaluate
+		b) Execute
+		c) Call with N arguments.
+		@added due to research
+		d) ADD namemap
+		e) DEL (namemap)
+		
+I have added "execution" to separate actions like "(define x y)" from "(+ a b)".
+The main difference is that "(define x y)" is not expression, therefore its result
+can't be added to stack, but it change SM state. The only way to perform "(define x y)"
+is to use "do" special-symbol, that executes its arguments successively. There are no
+other special symbols that perform argument exection. "Do" can't be actually called.
+
+In another hand "evaluation" is an action which result is added to the stack.
+"Evalution" is a final SchObject representation, ex "(+ 1 2)" -> "3", or "3" -> "3".
+Evaluation is performed for the most function arguments. Evaluation can be started by
+"eval" special symbol. "Eval" does not change the result stack, it is changed by
+the argument evaluation. "Eval" can be evaluted and executed.
+Evaluation of constants, specials and functions is simple: the result is
+the same object. Name evaluation returns its exact respesentation.
+List evaluation returns refered function application to its arguments. 
+
+"Call" actions with N arguments looks like follows:
+	0) the first, we evaluate object (if it was a list of a name).
+	1) the second, we have N specially prepared arguments in the result stack.
+		Argument can be previuosly evaluated of copied dirrectly (ex, "defun")
+		respectively to evaluated object.
+	2) Apply object to its argumens and push result to result stack.
+Only SchSpecials and SchFunctions can be called.
+
+
+
+Example:
+------------
+(do
+	(defun (isTheAnswer x)
+		(if (= x 42)
+			#true
+			#false
+		))
+	(eval (isTheAnswer (getNetworkData))))
+------------
+ 
+------------
+(do
+	(defun (act ?)
+		(do
+			(prod ?)
+			(build ?)
+			(buy ? ?)
+			(sell ? ?)
+		))
+	(act (getAIargs)))
+------------
+
+SchemeList::
+That means that we have to introduce special strategy of SchemeList processing.
+This is step-by-step List.evaluate() algorithm:
+	1) Evaluate "action <- arg0.eval()"
+		[SM.perform(EVALUATE\0 arg0)], [action <- res_stack.pop()]
+	2) If "action" is special then ask it, if another arguments are needed to
+		be evaluated. If ~ is a function, evaluate them anyway.
+		[task.add(EVALUATE\0 argK), k=1..N]
+	3) Call "action".
+		[task.add(CALL\N action)]
+		
+	Dirty hack:
+		this.evaluate(n == 0):
+	1) [task.add(EVALUATE\1 this)], [task.add(EVALUATE arg0)]
+		this.evaluate(n == 1):
+	1) [task.add(EVALUATE\0 argK), k=1..N]
+	2) [task.add(CALL\N arg0)]
+
+SchemeList::execute()
+	do the same, but [task.add(EXECUTE\N arg0)] instead of [task.add(CALL\N arg0)],
+					 [task.add(EXECUTE\1 this)] <-- [task.add(EVALUATE\1 this)]
+	
+
+
+
+What is SchObject<-Function? It has literal-to-arguments map and change SM enviroment.
+Then it runs another object.
+Functions are connected to namespaces. When functions is called, namespace is updated.
+For example, in "( (lambda (x) (+ x 5)) 6)", "6" is "(lambda (x) (+ x 5))"'s "x"
+argument, and in "(+ x 5)" "x.eval()" returns "6".
+Также следует хранить валентность функции.
+
+
+-------------------------------------------------
+
+
+Итак, есть namespace. Это стек из namemap. При заходе в функцию, она добавляет в
+namespace свой namemap, дальнейшие вычисления идут согласно новому namespace.
+При выходе из функции верний namemap должен уничтожиться. Также надо продумать,
+когда ешё можно уничтожить последний namemap (для организации хвостовой рекурсии).
+Запрещено переопределять специальные символы (то есть добавлять в стек namespace
+новые определения для predefined_atoms), для этого отдельная проверка.
+Для облегчения задачи, каждый namemap содержит информацию о том,
+какой объект его создал.
+
+Структура namemap:
+	*) содержит пары (id_lex, SchObjectRef)
+У namespace есть метод SchObjectRef getRef(int id), выкидывающий исключение
+	UndefinedSymbolError.
+
+
+========================== TAIL RECURSION ================================
+
+Хвостовая рекурсия, пример:
+	(defun summ (lambda (f n acc)
+		(if (= n 0)
+			acc
+			(summ f (- n 1) (+ acc (f n)))
+	))) // definition
+	(summ (lambda (x) (* x x)) 100) // call
+--------------
+(defun one (lambda (x) x))
+(summ one 2 0) -> [namemap f=one n=2 acc=0]_1
+	(if (= 2 0) ..1 ..2) -> ..2 (summ f (- n 1) (+ acc (f n))) -> [eval args]
+	--> (summ (lambda (x) x) (- 2 1) (+ 0 (one 2)))
+	--> (summ one 1 2) -=- теперь namemap_1 определённо не нужен (как определить?) -=-..
+task_stack::
+	[EV (summ one 2 0)] -->
+	[EV summ] [EV one] [EV 2] [EV 0] -->
+	[CALL\3 summ#] -->
+	[DEL summ#->namemap] [EV summ#->obj] [ADD summ#->namemap (1)] --> // TODO:
+	[DEL summ#->namemap] [EV (if (= n 0) ..1 ..2)] -->
+	[DEL summ#->namemap] [CALL\3 if] [EV (= n 0)] -->
+	[DEL summ#->namemap] [CALL\3 if] [CALL\2 =] [EV n] [EV 0] -->
+	[DEL summ#->namemap] [EV-0 (summ f (- n 1) (+ acc (f n))] -->
+	[DEL summ#->namemap] [EV-1 (summ f (- n 1) (+ acc (f n))] [EV summ] -->
+	[DEL summ#->namemap] [CALL\3 summ#] [EV f] [EV (- n 1)] [EV (+ acc (f n))] --> ...
+	[DEL summ#->namemap] [CALL\3 summ#] <evaluated yet>.
+	
+Итак, видно, что namemap(1) здесь использоваться больше не будет. Суть в том, что задание
+[CALL\3 summ#] последнее, оно само не зависит от namemap, так как summ# и его агрументы
+уже вычислены с помощью namemap. То же самое относится и к любой другой функции:
+	"[DEL func_a->namemap] [CALL\3 func_b]" --> "[CALL\3 func_b] [DEL func_a->namemap]".
+	
+Потому идея заносить в namemap информацию о добавившем его объекте была излишней!
+
+Таким образом, оптимизация хвостовой рекусии с namemap сводится всего лишь к изменению
+обработки задания CALL\N:
+	1) Если задание, следующее за текущим CALL\N является заданием DEL (удаления namemap),
+		то поменяем порядок их выполнения местами.
+		После чего выполняется DEL, а уже затем CALL\N.
+
+Заметим, что по задумке [ADD namemap] и [DEL namemap] образуют правильную скобочную
+последовательность типизированных по namemap скобок. Потому DEL удаляет namemap
+каждый раз с _вершины_ namespace.
+Следствие: для задания DEL нам не нужно никаких параметров. Каждый раз удаляем namemap
+с вершины.
+
+	
+--------------
+	
+	Верхушка namemap дожна быть удалена после вычисления аргументов в
+	"(summ f (- n 1) (* acc (f n)))", так как summ не входит в эту самую верхушку.
+	1) summ.getType() == NAME
+	2) Но summ не f, n, acc.
+	3) CALL\3 summ был последним вызовом в вышестоящем CALL\3 summ
+
+@deprecated:
+//	Для оптимизации хвостовой рекурсии можно прибегнуть к такому хаку: хранить информацию
+//	о добавлении нового namemap в стеке задач.
+
+
+---------------------------------------------------------------------------------------
+К текущему моменту рассмотрены evaluate, call, namespace, namemap, ADD, DEL,
+Constants, Lists, Functions, task stack, result stack.
+Осталось рассмотреть более подробно Names, Specials и Network.
+---------------------------------------------------------------------------------------
+
+SchName : SchObject.
+Является по сути ссылкой на объект где-то в памяти, это определяется исходя из контекста.
+А контекст, этот, собственно, текущее пространство имён (namespace). Не может быть
+вызван напрямую или выполнен. Единственное приминение: быть вычисленным и выдать
+объект с данным именем (определяется по id_lex) в текущем namespace.
+
+SchSpecial : SchObject.
+По-видимому, следует сделать этот класс абстрактным, и наследовать спецфункции от него.
+См. lisp-specials.txt
+
+Network.
+Сетевая сущность выделена в отдельный класс TypedClient, всё общение с сервером
+происходит через него. Держать ссылку на экземпляр TypedClient в
+каждом SchNetwork -- не Ъ, а SchObject запрещено как-либо обмениваться с
+сервером, кроме как через Task. Потому я выделил задание типа Network,
+выполнение которого на себя берёт VM.
+
+
+----------------------------------------------------------------------------------------
+List evaluate result stack. p# -- pushTask #
+[pX] [pY] .. [pZ] --> result Z .. Y X
+
+

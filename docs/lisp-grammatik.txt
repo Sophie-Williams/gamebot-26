@@ -1,0 +1,110 @@
+(function arg1 ... argN)
+((x))
+
+
+Keywords:
+0) defun		// can be used when interpreted
+(defun x y)
+(defun x y1 y2 ... yN)
+	assign x as synonym of y (or yN); y is Poliz
+it is a way of defigning new functions
+Errors:
+	can't redefun defunned and build-in functions
+
+-------- example --------
+	(defun ::= defun)
+	(::= ! (\lambda (n)
+		(if	(< n 0)
+			0
+			(if
+				(== n 0)
+				1
+				(* n (! (- n 1)))
+	))))
+tail recursion:
+	(::= ! (\lambda (n)
+		(::= !' (\lambda (m acc)
+			(if (= m 0)
+				acc
+				(!' (- m 1) (* acc m))
+		)))
+		(!' n 1)
+	)
+++++++++ example ++++++++
+
+
+
+
+================
+1) :=		// can be used to assing global variables
+
+
+2) \lambda
+(\lambda (x1 ... xN) y)
+	y depends on x1..xN
+
+-------- example --------
+(defun distance
+	(lambda (x y)
+		(if (< x y)
+			(- x y)
+			(- y x)
+)))
+++++++++ example ++++++++
+
+3) if	3-valency
+(if x y1 y2)
+	x != 0 --> y1
+ 	x == 0 --> y2
+
+4) do	N-valency
+(do x1 ... xN)
+	--> xN
+	_evaluate_ x1..xN and return xN
+
+-------- example --------
+i]  (do (play) (endturn) (print stats))
+ii] (defun play 
+		(do
+			(sell think_sell)
+			(buy think_buy)
+			(prod think_prod)
+			(build think_build)
+	))
+++++++++ example ++++++++
+
+Built-in functions: (see pp.43-44)
+
+_pure_functions_
+0-valency:
+?my_id	?turn	?players	?active_players
+?supply	?raw_price	?demand	?production_price
+
+1-valency: --argument player_id
+?money	?raw	?production	?production	?factories
+?auto_factories	?manufactured	?result_raw_sold
+?result_raw_price	?result_prod_bought	?result_prod_price
+
+_dirty_functions_
+(buy value price)
+(sell value price)
+(prod quantity)
+(build #)
+(endturn)
+(print arg1 ... argN)
+(:= variable value)
+
+=======================================================================
+							Poliz Hierarchy
+=======================================================================
+(function arg1 ... argN) --> Poliz
+Poliz
+	<-- PolizFunction (ex. \lambda) == PolizNode
+	<-- PolizInt
+	<-- PolizString
+
+=======================================================================
+							Program
+=======================================================================
+
+code_list --> (do code_list)

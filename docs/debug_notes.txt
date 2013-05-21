@@ -1,0 +1,18 @@
+--------------------------
+Memory leak:
+	((lambda (x) x) 1)
+--------------------------
+( (lambda (x) (if (== x 42) 111 37 )) (+ 3 39) )
+The following object will be evaluated:
+( 
+    ( <spec name_id=0> 
+        ( <name_id=49> ) 
+        ( <spec name_id=2> 
+            ( <name_id=51> <name_id=49> 42i ) 
+            111i 37i ) 
+    ) 
+    ( <spec name_id=10> 3i 39i ) 
+)
+SchemeMachine launch:
+[stdin::51] Runtime Error: symbol "lambda" with id=0 hasn't any defenition in the current namespace
+--------------------------
